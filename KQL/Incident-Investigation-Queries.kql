@@ -1,0 +1,14 @@
+// Azure Monitor + Log Analytics Support Lab
+// Incident Investigation Queries
+//
+// Query 01 — Workspace KQL Engine Validation
+//
+// Purpose:
+// Confirm that the Log Analytics query engine is operational before
+// telemetry sources such as Azure Monitor Agent and diagnostic settings
+// are connected to the workspace.
+
+print
+    Lab = "Azure Monitor + Log Analytics Support Lab",
+    Workspace = "LAW-AZMON-SUPPORT-LAB",
+    Validation = "KQL query engine operational"
