@@ -1,0 +1,121 @@
+// Azure Monitor + Log Analytics Support Lab
+// INC-007 — Log Analytics Scheduled Query Alert / Low Memory
+// Computer: AZMON-WIN01
+// Alert Rule: ALRT-AZMON-LOW-MEMORY-KQL
+// Threshold: Available memory below 2048 MB
+// Counter: Memory\Available Bytes
+
+// Query 01 — Latest available-memory value
+Perf
+| where TimeGenerated > ago(30m)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "Memory"
+| where CounterName =~ "Available Bytes"
+| top 1 by TimeGenerated desc
+| project TimeGenerated,
+          Computer,
+          AvailableMB=round(CounterValue / 1024.0 / 1024.0,0),
+          AvailableGB=round(CounterValue / 1024.0 / 1024.0 / 1024.0,2)
+
+// Query 02 — Scheduled-query alert condition
+Perf
+| where TimeGenerated > ago(5m)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "Memory"
+| where CounterName =~ "Available Bytes"
+| summarize arg_max(TimeGenerated, CounterValue) by Computer
+| extend AvailableMB=CounterValue / 1024.0 / 1024.0
+| where AvailableMB < 2048
+| project TimeGenerated,
+          Computer,
+          AvailableMB=round(AvailableMB,0)
+
+// Query 03 — Recent memory state transitions
+Perf
+| where TimeGenerated > ago(30m)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "Memory"
+| where CounterName =~ "Available Bytes"
+| extend AvailableMB=CounterValue / 1024.0 / 1024.0
+| extend State=iff(AvailableMB < 2048, "LOW MEMORY", "HEALTHY")
+| project TimeGenerated,
+          Computer,
+          AvailableMB=round(AvailableMB,0),
+          State
+| order by TimeGenerated desc
+
+// Query 04 — Full low-memory incident timeline
+Perf
+| where TimeGenerated > ago(60m)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "Memory"
+| where CounterName =~ "Available Bytes"
+| summarize AvailableMB=avg(CounterValue) / 1024.0 / 1024.0
+    by bin(TimeGenerated,1m)
+| order by TimeGenerated asc
+| render timechart
+
+// Query 05 — Minimum and maximum available memory
+Perf
+| where TimeGenerated > ago(2h)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "Memory"
+| where CounterName =~ "Available Bytes"
+| summarize MinimumBytes=min(CounterValue),
+            MaximumBytes=max(CounterValue)
+    by Computer
+| extend MinimumMB=MinimumBytes / 1024.0 / 1024.0,
+         MaximumMB=MaximumBytes / 1024.0 / 1024.0,
+         ReductionMB=(MaximumBytes-MinimumBytes) / 1024.0 / 1024.0
+| project Computer,
+          MinimumMB=round(MinimumMB,0),
+          MaximumMB=round(MaximumMB,0),
+          ReductionMB=round(ReductionMB,0)
+
+// Query 06 — Current alert evaluation state
+Perf
+| where TimeGenerated > ago(5m)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "Memory"
+| where CounterName =~ "Available Bytes"
+| summarize arg_max(TimeGenerated, CounterValue) by Computer
+| extend AvailableMB=CounterValue / 1024.0 / 1024.0
+| extend AlertCondition=iff(AvailableMB < 2048, 1, 0),
+         State=iff(AvailableMB < 2048, "LOW MEMORY", "HEALTHY")
+| project TimeGenerated,
+          Computer,
+          AvailableMB=round(AvailableMB,0),
+          AlertCondition,
+          State
+
+// Query 07 — Post-remediation recovery verification
+Perf
+| where TimeGenerated > ago(30m)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "Memory"
+| where CounterName =~ "Available Bytes"
+| top 10 by TimeGenerated desc
+| extend AvailableMB=CounterValue / 1024.0 / 1024.0
+| extend State=iff(AvailableMB < 2048, "LOW MEMORY", "HEALTHY")
+| project TimeGenerated,
+          Computer,
+          AvailableMB=round(AvailableMB,0),
+          State
+
+// Query 08 — Count healthy and low-memory samples
+Perf
+| where TimeGenerated > ago(2h)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "Memory"
+| where CounterName =~ "Available Bytes"
+| extend AvailableMB=CounterValue / 1024.0 / 1024.0
+| extend State=iff(AvailableMB < 2048, "LOW MEMORY", "HEALTHY")
+| summarize Samples=count(),
+            MinimumAvailableMB=min(AvailableMB),
+            MaximumAvailableMB=max(AvailableMB)
+    by State
+| project State,
+          Samples,
+          MinimumAvailableMB=round(MinimumAvailableMB,0),
+          MaximumAvailableMB=round(MaximumAvailableMB,0)
+| order by State asc
