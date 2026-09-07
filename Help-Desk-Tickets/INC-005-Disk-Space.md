@@ -163,7 +163,7 @@ Remediation
 Recovered Free Space
 ```
 
-INC-005 demonstrates disk-capacity monitoring, controlled incident generation, guest-level validation, Azure Monitor telemetry analysis, ingestion-latency troubleshooting, remediation, and 
+INC-005 demonstrates disk-capacity monitoring, controlled incident generation, guest-level validation, Azure Monitor telemetry analysis, ingestion-latency troubleshooting, remediation, and
 recovery verification.
 
 ---
@@ -2619,5 +2619,5 @@ Incident Status:
 CLOSED
 ```
 
-INC-005 successfully demonstrates storage-capacity monitoring, controlled disk consumption, Windows and Azure Monitor performance-counter validation, telemetry-latency troubleshooting, 
+INC-005 successfully demonstrates storage-capacity monitoring, controlled disk consumption, Windows and Azure Monitor performance-counter validation, telemetry-latency troubleshooting,
 remediation, and end-to-end recovery verification.
