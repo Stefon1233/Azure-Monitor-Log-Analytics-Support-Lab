@@ -1,0 +1,110 @@
+// Azure Monitor + Log Analytics Support Lab
+// INC-006 — Memory Pressure / High Memory Usage
+// Computer: AZMON-WIN01
+// Collected counter: Memory\Available Bytes
+
+// Query 01 — Latest available-memory value
+Perf
+| where TimeGenerated > ago(30m)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "Memory"
+| where CounterName =~ "Available Bytes"
+| top 1 by TimeGenerated desc
+| project TimeGenerated,
+          Computer,
+          AvailableMB=round(CounterValue / 1024.0 / 1024.0,0),
+          AvailableGB=round(CounterValue / 1024.0 / 1024.0 / 1024.0,2)
+
+// Query 02 — Recent available-memory samples
+Perf
+| where TimeGenerated > ago(30m)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "Memory"
+| where CounterName =~ "Available Bytes"
+| project TimeGenerated,
+          Computer,
+          AvailableMB=round(CounterValue / 1024.0 / 1024.0,0),
+          AvailableGB=round(CounterValue / 1024.0 / 1024.0 / 1024.0,2)
+| order by TimeGenerated desc
+
+// Query 03 — Collection and ingestion timestamps
+Perf
+| where TimeGenerated > ago(45m)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "Memory"
+| where CounterName =~ "Available Bytes"
+| project TimeGenerated,
+          IngestedAt=ingestion_time(),
+          AvailableMB=round(CounterValue / 1024.0 / 1024.0,0),
+          AvailableGB=round(CounterValue / 1024.0 / 1024.0 / 1024.0,2)
+| order by TimeGenerated desc
+
+// Query 04 — Available-memory timeline
+Perf
+| where TimeGenerated > ago(60m)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "Memory"
+| where CounterName =~ "Available Bytes"
+| summarize AvailableMB=avg(CounterValue) / 1024.0 / 1024.0
+    by bin(TimeGenerated,1m)
+| order by TimeGenerated asc
+| render timechart
+
+// Query 05 — Minimum and maximum available memory
+Perf
+| where TimeGenerated > ago(2h)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "Memory"
+| where CounterName =~ "Available Bytes"
+| summarize MinimumBytes=min(CounterValue),
+            MaximumBytes=max(CounterValue)
+            by Computer
+| extend MinimumMB=MinimumBytes / 1024.0 / 1024.0,
+         MaximumMB=MaximumBytes / 1024.0 / 1024.0,
+         ChangeMB=(MaximumBytes-MinimumBytes) / 1024.0 / 1024.0
+| project Computer,
+          MinimumMB=round(MinimumMB,0),
+          MaximumMB=round(MaximumMB,0),
+          ChangeMB=round(ChangeMB,0)
+
+// Query 06 — Detect low available memory
+Perf
+| where TimeGenerated > ago(15m)
+| where ObjectName =~ "Memory"
+| where CounterName =~ "Available Bytes"
+| summarize arg_max(TimeGenerated,CounterValue) by Computer
+| extend AvailableMB=CounterValue / 1024.0 / 1024.0
+| where AvailableMB < 1024
+| project TimeGenerated,
+          Computer,
+          AvailableMB=round(AvailableMB,0)
+| order by AvailableMB asc
+
+// Query 07 — Verify post-remediation recovery
+Perf
+| where TimeGenerated > ago(30m)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "Memory"
+| where CounterName =~ "Available Bytes"
+| top 10 by TimeGenerated desc
+| project TimeGenerated,
+          IngestedAt=ingestion_time(),
+          AvailableMB=round(CounterValue / 1024.0 / 1024.0,0),
+          AvailableGB=round(CounterValue / 1024.0 / 1024.0 / 1024.0,2)
+
+// Query 08 — Quantify controlled memory-pressure change
+Perf
+| where TimeGenerated > ago(2h)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "Memory"
+| where CounterName =~ "Available Bytes"
+| summarize BaselineMaxBytes=max(CounterValue),
+            PressureMinBytes=min(CounterValue)
+            by Computer
+| extend BaselineMaxMB=BaselineMaxBytes / 1024.0 / 1024.0,
+         PressureMinMB=PressureMinBytes / 1024.0 / 1024.0,
+         ReductionMB=(BaselineMaxBytes-PressureMinBytes) / 1024.0 / 1024.0
+| project Computer,
+          BaselineMaxMB=round(BaselineMaxMB,0),
+          PressureMinMB=round(PressureMinMB,0),
+          ReductionMB=round(ReductionMB,0)
