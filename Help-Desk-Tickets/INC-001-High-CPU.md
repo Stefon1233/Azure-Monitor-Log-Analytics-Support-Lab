@@ -2,16 +2,16 @@
 
 ## Incident Summary
 
-**Incident ID:** INC-001  
-**Title:** High CPU Utilization on AZMON-WIN01  
-**Category:** Azure Monitor / Virtual Machine Performance  
-**Severity:** Warning  
-**Affected Resource:** AZMON-WIN01  
-**Resource Group:** RG-AZMON-SUPPORT-LAB  
-**Region:** North Central US  
-**Detection Method:** Azure Monitor Metric Alert  
-**Alert Rule:** ALRT-AZMON-HIGH-CPU  
-**Status:** Recovery In Progress  
+**Incident ID:** INC-001
+**Title:** High CPU Utilization on AZMON-WIN01
+**Category:** Azure Monitor / Virtual Machine Performance
+**Severity:** Warning
+**Affected Resource:** AZMON-WIN01
+**Resource Group:** RG-AZMON-SUPPORT-LAB
+**Region:** North Central US
+**Detection Method:** Azure Monitor Metric Alert
+**Alert Rule:** ALRT-AZMON-HIGH-CPU
+**Status:** Resolved
 
 ---
 
@@ -508,9 +508,11 @@ Alert evidence captured
       ↓
 Worker validation returned zero active workers
       ↓
-CPU recovery monitoring initiated
+CPU recovery validated
       ↓
-Awaiting automatic alert resolution
+ALRT-AZMON-HIGH-CPU automatically resolved
+      ↓
+Incident closed
 ```
 
 ---
@@ -546,7 +548,7 @@ In this lab, however, the CPU increase was intentionally generated and the exact
 
 This incident demonstrated the importance of establishing a monitoring baseline before generating a test condition.
 
-Because Azure Monitor Agent, DCR association, Log Analytics ingestion, and platform metrics had already been validated, the high CPU condition could be investigated without uncertainty about 
+Because Azure Monitor Agent, DCR association, Log Analytics ingestion, and platform metrics had already been validated, the high CPU condition could be investigated without uncertainty about
 whether the monitoring platform itself was functioning.
 
 The incident also demonstrated the difference between:
@@ -608,4 +610,4 @@ Incident Status: CLOSED
 
 ```
 
-The incident remains open until Azure Monitor confirms CPU recovery and ALRT-AZMON-HIGH-CPU automatically transitions from Fired to Resolved.
+Azure Monitor confirmed CPU recovery and ALRT-AZMON-HIGH-CPU automatically transitioned from Fired to Resolved. The incident was then closed.
