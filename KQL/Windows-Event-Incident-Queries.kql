@@ -1,0 +1,81 @@
+// Azure Monitor + Log Analytics Support Lab
+// INC-004 — Windows Application Event Investigation
+// Computer: AZMON-WIN01
+// Controlled Source: AZMON-AppLab
+// Controlled Event ID: 200
+
+// Query 01 — Verify recent Windows Event ingestion
+Event
+| where TimeGenerated > ago(30m)
+| where Computer =~ "AZMON-WIN01"
+| summarize EventCount=count(),
+            LastEvent=max(TimeGenerated)
+            by Computer
+
+// Query 02 — Summarize recent Windows Event sources
+Event
+| where TimeGenerated > ago(2h)
+| where Computer =~ "AZMON-WIN01"
+| summarize Count=count()
+    by EventLog, EventLevelName, Source
+| order by Count desc
+
+// Query 03 — Isolate controlled Application Error
+Event
+| where TimeGenerated > ago(2h)
+| where Computer =~ "AZMON-WIN01"
+| where EventID == 200
+| where Source =~ "AZMON-AppLab"
+| project TimeGenerated,
+          Computer,
+          EventLog,
+          EventLevelName,
+          Source,
+          EventID
+| order by TimeGenerated desc
+
+// Query 04 — Review Application Event timeline
+Event
+| where TimeGenerated > ago(2h)
+| where Computer =~ "AZMON-WIN01"
+| where EventLog =~ "Application"
+| project TimeGenerated,
+          EventLevelName,
+          Source,
+          EventID
+| order by TimeGenerated desc
+
+// Query 05 — Correlate Azure Run Command activity
+AzureActivity
+| where TimeGenerated > ago(4h)
+| where ResourceGroup =~ "RG-AZMON-SUPPORT-LAB"
+| where OperationNameValue =~ "MICROSOFT.COMPUTE/VIRTUALMACHINES/RUNCOMMAND/ACTION"
+| where TimeGenerated > datetime(2026-09-07 03:00:00)
+| project TimeGenerated,
+          OperationNameValue,
+          ActivityStatusValue,
+          ResourceGroup
+| order by TimeGenerated asc
+
+// Query 06 — Find recent Windows errors
+Event
+| where TimeGenerated > ago(24h)
+| where Computer =~ "AZMON-WIN01"
+| where EventLevelName =~ "Error"
+| project TimeGenerated,
+          Computer,
+          EventLog,
+          Source,
+          EventID
+| order by TimeGenerated desc
+
+// Query 07 — Verify Heartbeat remained healthy
+Heartbeat
+| where Computer =~ "AZMON-WIN01"
+| where TimeGenerated > ago(15m)
+| summarize LastHeartbeat=max(TimeGenerated),
+            HeartbeatCount=count()
+| extend MinutesSinceHeartbeat=datetime_diff("minute", now(), LastHeartbeat)
+| project LastHeartbeat,
+          MinutesSinceHeartbeat,
+          HeartbeatCount
