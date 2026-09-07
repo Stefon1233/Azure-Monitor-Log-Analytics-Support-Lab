@@ -6,19 +6,19 @@
 
 ## Incident Summary
 
-**Incident ID:** INC-002  
-**Title:** Missing Heartbeat / Azure Monitor Agent Interruption  
-**Affected Resource:** AZMON-WIN01  
-**Resource Group:** RG-AZMON-SUPPORT-LAB  
-**Monitoring Workspace:** LAW-AZMON-SUPPORT-LAB  
-**Data Collection Rule:** DCR-AZMON-WINDOWS  
-**Platform:** Microsoft Azure  
-**Operating System:** Windows Server 2022 Datacenter: Azure Edition  
-**Severity:** Medium / Monitoring Degradation  
-**Status:** Resolved  
-**Incident Type:** Missing Monitoring Telemetry  
-**Root Cause:** Controlled interruption of the Azure Monitor Agent core process  
-**Recovery:** Azure Monitor Agent automatically recovered and Heartbeat telemetry resumed  
+**Incident ID:** INC-002
+**Title:** Missing Heartbeat / Azure Monitor Agent Interruption
+**Affected Resource:** AZMON-WIN01
+**Resource Group:** RG-AZMON-SUPPORT-LAB
+**Monitoring Workspace:** LAW-AZMON-SUPPORT-LAB
+**Data Collection Rule:** DCR-AZMON-WINDOWS
+**Platform:** Microsoft Azure
+**Operating System:** Windows Server 2022 Datacenter: Azure Edition
+**Severity:** Medium / Monitoring Degradation
+**Status:** Resolved
+**Incident Type:** Missing Monitoring Telemetry
+**Root Cause:** Controlled interruption of the Azure Monitor Agent core process
+**Recovery:** Azure Monitor Agent automatically recovered and Heartbeat telemetry resumed
 
 ---
 
