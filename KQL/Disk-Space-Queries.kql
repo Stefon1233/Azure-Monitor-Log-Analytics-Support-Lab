@@ -1,0 +1,111 @@
+// Azure Monitor + Log Analytics Support Lab
+// INC-005 — Disk Space / Storage Capacity Monitoring
+// Computer: AZMON-WIN01
+
+// Query 01 — Latest disk free-space baseline
+Perf
+| where TimeGenerated > ago(30m)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "LogicalDisk"
+| where CounterName =~ "Free Megabytes"
+| summarize arg_max(TimeGenerated, CounterValue)
+    by Computer, InstanceName
+| project TimeGenerated,
+          Computer,
+          Disk=InstanceName,
+          FreeMB=round(CounterValue, 0)
+| order by Disk asc
+
+// Query 02 — Review recent free-space samples
+Perf
+| where TimeGenerated > ago(30m)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "LogicalDisk"
+| where CounterName =~ "Free Megabytes"
+| project TimeGenerated,
+          Computer,
+          Disk=InstanceName,
+          FreeMB=round(CounterValue, 0)
+| order by TimeGenerated desc
+
+// Query 03 — Compare collection and ingestion timestamps
+Perf
+| where TimeGenerated > ago(45m)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "LogicalDisk"
+| where CounterName =~ "Free Megabytes"
+| project TimeGenerated,
+          IngestedAt=ingestion_time(),
+          Disk=InstanceName,
+          FreeMB=round(CounterValue, 0)
+| order by TimeGenerated desc
+
+// Query 04 — Disk free-space timeline
+Perf
+| where TimeGenerated > ago(60m)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "LogicalDisk"
+| where CounterName =~ "Free Megabytes"
+| summarize FreeMB=avg(CounterValue)
+    by bin(TimeGenerated, 1m)
+| order by TimeGenerated asc
+| render timechart
+
+// Query 05 — Minimum free space observed
+Perf
+| where TimeGenerated > ago(2h)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "LogicalDisk"
+| where CounterName =~ "Free Megabytes"
+| summarize MinimumFreeMB=min(CounterValue),
+            MaximumFreeMB=max(CounterValue)
+            by Computer, InstanceName
+| extend ChangeMB=MaximumFreeMB-MinimumFreeMB
+| project Computer,
+          Disk=InstanceName,
+          MinimumFreeMB=round(MinimumFreeMB,0),
+          MaximumFreeMB=round(MaximumFreeMB,0),
+          ChangeMB=round(ChangeMB,0)
+
+// Query 06 — Detect disks below a free-space threshold
+Perf
+| where TimeGenerated > ago(15m)
+| where ObjectName =~ "LogicalDisk"
+| where CounterName =~ "Free Megabytes"
+| summarize arg_max(TimeGenerated, CounterValue)
+    by Computer, InstanceName
+| where CounterValue < 20480
+| project TimeGenerated,
+          Computer,
+          Disk=InstanceName,
+          FreeMB=round(CounterValue,0)
+| order by FreeMB asc
+
+// Query 07 — Verify post-remediation recovery
+Perf
+| where TimeGenerated > ago(30m)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "LogicalDisk"
+| where CounterName =~ "Free Megabytes"
+| top 10 by TimeGenerated desc
+| project TimeGenerated,
+          IngestedAt=ingestion_time(),
+          Disk=InstanceName,
+          FreeMB=round(CounterValue,0)
+
+// Query 08 — Summarize incident free-space change
+Perf
+| where TimeGenerated > ago(2h)
+| where Computer =~ "AZMON-WIN01"
+| where ObjectName =~ "LogicalDisk"
+| where CounterName =~ "Free Megabytes"
+| summarize BaselineMaxMB=max(CounterValue),
+            IncidentMinMB=min(CounterValue)
+            by Computer
+| extend ConsumedMB=BaselineMaxMB-IncidentMinMB
+| extend ConsumedGB=ConsumedMB/1024
+| project Computer,
+          BaselineMaxMB=round(BaselineMaxMB,0),
+          IncidentMinMB=round(IncidentMinMB,0),
+          ConsumedMB=round(ConsumedMB,0),
+          ConsumedGB=round(ConsumedGB,2)
