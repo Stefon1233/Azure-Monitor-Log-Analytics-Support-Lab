@@ -1,0 +1,83 @@
+// Azure Monitor + Log Analytics Support Lab
+// INC-003 — VM Availability / Controlled Deallocation
+// Resource: AZMON-WIN01
+
+// Query 01 — Heartbeat baseline
+Heartbeat
+| where TimeGenerated > ago(15m)
+| where Computer =~ "AZMON-WIN01"
+| summarize LastHeartbeat=max(TimeGenerated),
+            HeartbeatCount=count()
+            by Computer
+
+// Query 02 — Measure time since last heartbeat
+Heartbeat
+| where Computer =~ "AZMON-WIN01"
+| summarize LastHeartbeat=max(TimeGenerated)
+| extend MinutesSinceHeartbeat=datetime_diff("minute", now(), LastHeartbeat)
+| project LastHeartbeat, MinutesSinceHeartbeat
+
+// Query 03 — Review Microsoft.Compute activity
+AzureActivity
+| where TimeGenerated > ago(4h)
+| where ResourceGroup =~ "RG-AZMON-SUPPORT-LAB"
+| where ResourceProviderValue =~ "MICROSOFT.COMPUTE"
+| project TimeGenerated,
+          OperationNameValue,
+          ActivityStatusValue,
+          ResourceGroup
+| order by TimeGenerated desc
+
+// Query 04 — Verify VM deallocation lifecycle
+AzureActivity
+| where TimeGenerated > ago(4h)
+| where ResourceGroup =~ "RG-AZMON-SUPPORT-LAB"
+| where OperationNameValue =~ "MICROSOFT.COMPUTE/VIRTUALMACHINES/DEALLOCATE/ACTION"
+| project TimeGenerated,
+          OperationNameValue,
+          ActivityStatusValue,
+          ResourceGroup
+| order by TimeGenerated asc
+
+// Query 05 — Verify VM startup lifecycle
+AzureActivity
+| where TimeGenerated > ago(4h)
+| where ResourceGroup =~ "RG-AZMON-SUPPORT-LAB"
+| where OperationNameValue contains "VIRTUALMACHINES/START"
+| project TimeGenerated,
+          OperationNameValue,
+          ActivityStatusValue,
+          ResourceGroup
+| order by TimeGenerated asc
+
+// Query 06 — Review heartbeat records around outage
+Heartbeat
+| where Computer =~ "AZMON-WIN01"
+| where TimeGenerated > ago(2h)
+| project TimeGenerated, Computer
+| order by TimeGenerated asc
+
+// Query 07 — Detect computers with stale heartbeat
+Heartbeat
+| summarize LastHeartbeat=max(TimeGenerated) by Computer
+| extend MinutesSinceHeartbeat=datetime_diff("minute", now(), LastHeartbeat)
+| where MinutesSinceHeartbeat >= 5
+| order by MinutesSinceHeartbeat desc
+
+// Query 08 — Verify heartbeat recovery
+Heartbeat
+| where Computer =~ "AZMON-WIN01"
+| where TimeGenerated > ago(30m)
+| summarize LastHeartbeat=max(TimeGenerated),
+            HeartbeatCount=count()
+| extend MinutesSinceHeartbeat=datetime_diff("minute", now(), LastHeartbeat)
+| project LastHeartbeat, MinutesSinceHeartbeat, HeartbeatCount
+
+// Query 09 — Summarize VM control-plane operations
+AzureActivity
+| where TimeGenerated > ago(4h)
+| where ResourceGroup =~ "RG-AZMON-SUPPORT-LAB"
+| where OperationNameValue contains "VIRTUALMACHINES"
+| summarize Count=count()
+    by OperationNameValue, ActivityStatusValue
+| order by OperationNameValue asc, ActivityStatusValue asc
