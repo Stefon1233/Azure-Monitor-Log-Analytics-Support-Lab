@@ -1,0 +1,16 @@
+// Azure Monitor + Log Analytics Support Lab
+// Windows Event Queries
+
+// Verify collected Windows warning, error, and critical events
+Event
+| where TimeGenerated > ago(30m)
+| project TimeGenerated, Computer, EventLog, EventLevelName, Source, EventID
+| order by TimeGenerated desc
+
+// Verify controlled lab warning Event ID 100
+Event
+| where TimeGenerated > ago(30m)
+| where Computer =~ "AZMON-WIN01"
+| where EventID == 100
+| project TimeGenerated, Computer, EventLog, EventLevelName, Source, EventID
+| order by TimeGenerated desc

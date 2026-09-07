@@ -1,0 +1,8 @@
+// Azure Monitor + Log Analytics Support Lab
+// Heartbeat Queries
+
+// Verify Azure Monitor Agent connectivity
+Heartbeat
+| where TimeGenerated > ago(30m)
+| project TimeGenerated, Computer, OSType
+| order by TimeGenerated desc

@@ -1,0 +1,8 @@
+// Azure Monitor + Log Analytics Support Lab
+// Performance Counter Queries
+
+// Verify performance telemetry from AZMON-WIN01
+Perf
+| where TimeGenerated > ago(30m)
+| project TimeGenerated, Computer, ObjectName, CounterName, InstanceName, CounterValue
+| order by TimeGenerated desc
