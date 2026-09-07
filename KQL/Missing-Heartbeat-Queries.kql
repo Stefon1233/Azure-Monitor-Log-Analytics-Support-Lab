@@ -1,0 +1,65 @@
+// Azure Monitor + Log Analytics Support Lab
+// INC-002 — Missing Heartbeat / Azure Monitor Agent Failure
+// Computer: AZMON-WIN01
+
+// Query 01 — Current heartbeat baseline
+Heartbeat
+| where TimeGenerated > ago(30m)
+| where Computer =~ "AZMON-WIN01"
+| summarize LastHeartbeat=max(TimeGenerated),
+            HeartbeatCount=count()
+            by Computer, OSType
+
+// Query 02 — Determine minutes since last heartbeat
+Heartbeat
+| where Computer =~ "AZMON-WIN01"
+| summarize LastHeartbeat=max(TimeGenerated)
+| extend MinutesSinceHeartbeat=datetime_diff("minute", now(), LastHeartbeat)
+| project LastHeartbeat, MinutesSinceHeartbeat
+
+// Query 03 — Review recent heartbeat timeline
+Heartbeat
+| where Computer =~ "AZMON-WIN01"
+| where TimeGenerated > ago(30m)
+| project TimeGenerated, Computer
+| order by TimeGenerated desc
+
+// Query 04 — Visualize the controlled heartbeat interruption
+Heartbeat
+| where Computer =~ "AZMON-WIN01"
+| where TimeGenerated between (
+    datetime(2026-09-07 01:30:00) ..
+    datetime(2026-09-07 02:05:00)
+)
+| make-series HeartbeatCount=count() default=0
+    on TimeGenerated
+    from datetime(2026-09-07 01:30:00)
+    to datetime(2026-09-07 02:05:00)
+    step 1m
+    by Computer
+| render timechart
+
+// Query 05 — Review exact heartbeat records surrounding interruption
+Heartbeat
+| where Computer =~ "AZMON-WIN01"
+| where TimeGenerated between (
+    datetime(2026-09-07 01:30:00) ..
+    datetime(2026-09-07 02:05:00)
+)
+| project TimeGenerated, Computer
+| order by TimeGenerated asc
+
+// Query 06 — Detect systems missing heartbeat for more than five minutes
+Heartbeat
+| summarize LastHeartbeat=max(TimeGenerated) by Computer
+| extend MinutesSinceHeartbeat=datetime_diff("minute", now(), LastHeartbeat)
+| where MinutesSinceHeartbeat >= 5
+| order by MinutesSinceHeartbeat desc
+
+// Query 07 — Verify heartbeat recovery
+Heartbeat
+| where Computer =~ "AZMON-WIN01"
+| where TimeGenerated > ago(15m)
+| summarize LastHeartbeat=max(TimeGenerated),
+            HeartbeatCount=count()
+| extend MinutesSinceHeartbeat=datetime_diff("minute", now(), LastHeartbeat)
