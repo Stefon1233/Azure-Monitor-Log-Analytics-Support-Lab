@@ -137,6 +137,9 @@ AG-AZMON-SUPPORT
 
 # Monitoring Architecture
 
+![Azure Monitor + Log Analytics Architecture](Assets/Azure-Monitor-Log-Analytics-Support-Lab-Architecture-Diagram.png)
+
+
 ```mermaid
 flowchart TD
     VM[AZMON-WIN01<br/>Windows Server 2022]
@@ -1487,6 +1490,9 @@ Easy to validate
 ---
 
 # Incident Response Lifecycle
+
+![Incident Response Lifecycle](Assets/Azure-Monitor-Log-Analytics-Support-Lab-Incident-Response-Lifecycle-Diagram.png)
+
 
 ```mermaid
 flowchart LR
