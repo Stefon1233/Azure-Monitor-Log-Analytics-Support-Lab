@@ -1,0 +1,70 @@
+// Azure Monitor + Log Analytics Support Lab
+// Activity Log Queries
+// Workspace: LAW-AZMON-SUPPORT-LAB
+
+// Query 01 — Verify recent Azure Activity Log ingestion
+AzureActivity
+| where TimeGenerated > ago(2h)
+| project TimeGenerated, OperationNameValue, ActivityStatusValue,
+          ResourceGroup, ResourceProviderValue
+| order by TimeGenerated desc
+
+// Query 02 — Review recent subscription operations
+AzureActivity
+| where TimeGenerated > ago(24h)
+| order by TimeGenerated desc
+| take 50
+
+// Query 03 — Review failed Azure operations
+AzureActivity
+| where TimeGenerated > ago(24h)
+| where ActivityStatusValue =~ "Failed"
+| project TimeGenerated, OperationNameValue, ActivityStatusValue,
+          ResourceGroup, ResourceProviderValue
+| order by TimeGenerated desc
+
+// Query 04 — Review operations for the monitoring lab
+AzureActivity
+| where TimeGenerated > ago(24h)
+| where ResourceGroup =~ "RG-AZMON-SUPPORT-LAB"
+| project TimeGenerated, OperationNameValue, ActivityStatusValue,
+          ResourceGroup, ResourceProviderValue
+| order by TimeGenerated desc
+
+// Query 05 — Verify controlled tag-write lifecycle
+AzureActivity
+| where TimeGenerated > ago(4h)
+| where ResourceGroup =~ "RG-AZMON-SUPPORT-LAB"
+| where OperationNameValue =~ "MICROSOFT.RESOURCES/TAGS/WRITE"
+| project TimeGenerated, OperationNameValue, ActivityStatusValue,
+          ResourceGroup, ResourceProviderValue
+| order by TimeGenerated desc
+
+// Query 06 — Verify overall AzureActivity ingestion
+AzureActivity
+| summarize Records=count(),
+            FirstEvent=min(TimeGenerated),
+            LastEvent=max(TimeGenerated)
+
+// Query 07 — Review Activity Log volume by day
+AzureActivity
+| summarize Count=count() by bin(TimeGenerated, 1d)
+| order by TimeGenerated desc
+
+// Query 08 — Summarize operation status
+AzureActivity
+| where TimeGenerated > ago(24h)
+| summarize Count=count() by ActivityStatusValue
+| order by Count desc
+
+// Query 09 — Identify most common Azure operations
+AzureActivity
+| where TimeGenerated > ago(24h)
+| summarize Count=count() by OperationNameValue
+| order by Count desc
+
+// Query 10 — Summarize activity by Azure resource provider
+AzureActivity
+| where TimeGenerated > ago(24h)
+| summarize Count=count() by ResourceProviderValue
+| order by Count desc
