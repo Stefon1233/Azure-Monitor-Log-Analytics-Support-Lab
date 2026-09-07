@@ -1,3 +1,5 @@
+![Azure Monitor + Log Analytics Support Lab](Assets/Azure-Monitor-Log-Analytics-Support-Lab-Repository-Preview.jpg)
+
 # Azure Monitor + Log Analytics Support Lab
 
 Hands-on Microsoft Azure monitoring and cloud support lab demonstrating Azure Monitor, Log Analytics, Azure Monitor Agent, Data Collection Rules, Kusto Query Language, performance monitoring,
